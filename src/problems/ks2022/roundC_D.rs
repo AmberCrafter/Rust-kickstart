@@ -44,52 +44,56 @@ impl<R: std::io::Read, W: std::io::Write> IO<R, W> {
 struct Solution {}
 
 impl Solution {
+    fn is_palindromic(s: &Vec<char>) -> usize {
+        for i in 0..s.len()/2 {
+            if s[i]!=s[s.len()-1-i] {return 0;}
+        }
+        1
+    }
+
+    fn next(total: &mut usize, sum: usize, s: Vec<char>){
+        if s.len()>0 {
+            for i in 0..s.len() {
+                let mut s_clone = s.clone();
+                s_clone.remove(i);
+                Solution::next(total, sum+Solution::is_palindromic(&s_clone), s_clone);
+            }
+        } else {
+            *total += sum;
+        }
+    }
+
+    fn factorial(n: usize) -> usize {
+        if n>1 {
+            n*Solution::factorial(n-1)
+        } else {
+            n
+        }
+    }
+
+    fn calc_modulo(numerator: usize, denominator: usize) -> String {
+        let M = 1000000007;
+        for i in 1..denominator {
+            let numer =M*i+numerator;
+            if numer%denominator==0 {
+                return (numer/denominator).to_string();
+            }
+        }
+        "".to_string()
+    }
+
     pub fn solve(console: &mut Console) -> String {
-        // get nums of ants and stick length
-        let ants_nums: usize = console.read();
-        let stick_len: usize = console.read::<usize>();
-
-        // get ants info: <label, position, direction>
-        let mut ants: Vec<(usize, usize, usize)> = Vec::new();
-        for i in 0..ants_nums {
-            ants.push((i + 1, console.read::<usize>(), console.read::<usize>()));
+        let nums_chars: usize = console.read();
+        let inputs: Vec<char> = console.chars();
+        let denominator = Solution::factorial(nums_chars);
+        let mut numerator = 0;
+        Solution::next(&mut numerator, 0, inputs);
+        // println!("{numerator}/{denominator}");
+        if numerator%denominator == 0 {
+            (numerator/denominator).to_string()
+        } else {
+            Solution::calc_modulo(numerator, denominator)
         }
-
-        // calc distance to edge: (distance, orientation)
-        let mut events: Vec<(usize, usize)> = Vec::new();
-        for ant in ants.iter() {
-            if ant.2 == 0 {
-                events.push((ant.1, 0));
-            } else {
-                events.push((stick_len - ant.1, 1));
-            }
-        }
-
-        ants.sort_by(|a, b| a.1.cmp(&b.1)); // sort by position
-        events.sort();
-
-        // get order with label: (distance, label)
-        let mut order: Vec<(usize, usize)> = Vec::new();
-        let (mut l, mut r) = (0, ants_nums - 1);
-        for event in events.iter() {
-            if event.1 == 0 {
-                // pop left value
-                order.push((event.0, ants[l].0));
-                l += 1;
-            } else {
-                // pop last value
-                order.push((event.0, ants[r].0));
-                r -= 1;
-            }
-        }
-
-        // sort ordering with label
-        order.sort();
-        order
-            .into_iter()
-            .map(|(dist, label)| label.to_string())
-            .collect::<Vec<_>>()
-            .join(" ")
     }
 }
 
